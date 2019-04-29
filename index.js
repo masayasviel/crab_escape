@@ -1,46 +1,43 @@
 // phina.js をグローバル領域に展開
 phina.globalize();
 
-var ASSETS = {
+const ASSETS = {
   image: {
-      crab:'http://jsrun.it/assets/Q/Z/P/t/QZPtg.png',
-      Footprint:'http://jsrun.it/assets/m/l/f/o/mlfom.png',
-      st:"http://jsrun.it/assets/q/l/G/2/qlG2S",
-      ed:"http://jsrun.it/assets/A/J/B/y/AJByG"
+      crab:"https://4.bp.blogspot.com/-sgajyTFca4w/U820D46PUzI/AAAAAAAAjRE/Rpt5Vwp6dho/s800/takaashi_gani.png",
+      footPrint:"https://3.bp.blogspot.com/-GV97aHpYy6I/UNQkHIwCoQI/AAAAAAAAI2Q/sIA67uE5YM8/s1600/mark_footprint.png",
+      st:"./images/start.png",
+      ed:"./images/finish.png"
   }
 };
 
 // 定数
-var SCREEN_WIDTH  = 640; // 画面横サイズ
-var SCREEN_HEIGHT = 960; // 画面縦サイズ
-var timeC = 0;
+const SCREEN_WIDTH  = 640; // 画面横サイズ
+const SCREEN_HEIGHT = 960; // 画面縦サイズ
+let timeCount; // 時間
 
 // タイトルシーン
-phina.define('TitleScene', {
-  superClass: 'DisplayScene',
-  // コンストラクタ
-  init: function() {
+phina.define("TitleScene", {
+  superClass:"DisplayScene",
+  init: function(){
     this.superInit();
-    // 背景追加
-    Sprite('st').addChildTo(this)
-                  .setPosition(this.gridX.center(),550)
-    // タイトル
+
+    Sprite("st").addChildTo(this).setPosition(this.gridX.center(), 550);
+
     Label({
-      text:'crab escape !',
+      text:"crab escape !",
       fontSize:64,
-      fill:'#FFFFFF',
+      fill:"white",
     }).addChildTo(this).setPosition(this.gridX.center(), this.gridY.span(4));
 
     Label({
       text:"TOUCH START",
       fontSize:32,
-      fill:'#FFFFFF',
+      fill:"white",
     }).addChildTo(this)
       .setPosition(this.gridX.center(), this.gridY.span(14))
       .tweener.fadeOut(1000).fadeIn(500).setLoop(true).play();
-    // 画面タッチ時
-    this.on('pointend', function() {
-      // 次のシーンへ
+    
+    this.on("pointend", function(){
       this.exit();
     });
   },
@@ -51,77 +48,115 @@ phina.define('MainScene', {
   superClass: 'DisplayScene',
   init: function() {
     this.superInit();
-      
-      var escape = Sprite('crab').addChildTo(this); 
-        escape.x = Random.randint(80, 560);
-        escape.y = Random.randint(80, 880);
-        escape.width = 150;
-        escape.height = 150;
-        escape.physical.force(Math.randint(-30, 30), Math.randint(-30, 30));
-        // 更新イベント
-        escape.update = function(app) {
-          // 画面端との判定
-         if (escape.left < 0) {
-             escape.left = 0;
-             escape.physical.velocity.x *= -1;
-         }else if (escape.right > SCREEN_WIDTH) {
-             escape.right = SCREEN_WIDTH;
-             escape.physical.velocity.x *= -1;
-         }
-         if (escape.top < 0) {
-             escape.top = 0;
-             escape.physical.velocity.y *= -1;
-         }else if (escape.bottom > SCREEN_HEIGHT) {
-             escape.bottom = SCREEN_HEIGHT;
-             escape.physical.velocity.y *= -1;
-         }
-          timeC += app.deltaTime;
-       };
-      
-      var self = this;
-      var capture = Sprite('Footprint').addChildTo(this);
-      capture.x = this.gridX.center();
-      capture.y = this.gridY.center();
-      capture.width = 100;
-      capture.height = 100;
-      capture.setInteractive(true);
-      // タッチ開始時
-      this.onpointstart = function(e) {
-          // スプライトをタッチ位置に
-          capture.x = e.pointer.x;
-          capture.y = e.pointer.y;
-          if (capture.hitTestElement(escape)) {
-              escape.vx = 0;
-              escape.vy = 0;
-              self.exit();
-          }
-      }
+    timeCount = 0; // 時間リセット
+    // 蟹インスタンス
+    this.escape = Crab().addChildTo(this);
+    // 足跡インスタンス
+    this.capture = FootPrint().addChildTo(this).setPosition(this.gridX.center(), this.gridY.center());
+  },
+  onpointstart: function(e){
+    // スプライトをタッチ位置に
+    this.capture.x = e.pointer.x;
+    this.capture.y = e.pointer.y;
+    this.hitTestTreadOn();
+  },
+  hitTestTreadOn: function(){
+    const escape = this.escape;
+    const capture = this.capture;
+    const self = this;
+    // 判定用の円
+    const captureCircle = Circle(capture.x, capture.y, 50);
+    const escapeCircle = Circle(escape.x, escape.y, 60);
+    // 円判定
+    if(Collision.testCircleCircle(captureCircle, escapeCircle)){
+      self.exit();
+    }
+  },
+  update: function(app){
+    timeCount += app.deltaTime;
+  }
+});
+
+// 蟹クラスを定義
+phina.define("Crab", {
+  superClass: "Sprite",
+  init:function(){
+    this.superInit("crab", 150, 150);
+    this.x = Random.randint(80, 560);
+    this.y = Random.randint(80, 880);
+    this.physical.force(Math.randint(-30, 30), Math.randint(-30, 30));
+  },
+  update:function(){
+    // 画面端との判定
+    if(this.left < 0){
+      this.left = 0;
+      this.physical.velocity.x *= -1;
+    }else if(this.right > SCREEN_WIDTH){
+      this.right = SCREEN_WIDTH;
+      this.physical.velocity.x *= -1;
+    }
+    if(this.top < 0){
+      this.top = 0;
+      this.physical.velocity.y *= -1;
+    }else if (this.bottom > SCREEN_HEIGHT) {
+      this.bottom = SCREEN_HEIGHT;
+      this.physical.velocity.y *= -1;
+    }
+  },
+});
+
+// 足跡クラスを定義
+phina.define("FootPrint", {
+  superClass: "Sprite",
+  init:function(){
+    this.superInit("footPrint", 100, 100);
+    this.setInteractive(true);
   },
 });
 
 //resultScene クラスを定義
 phina.define("ResultScene", {
-  superClass: 'DisplayScene',
-  init: function() {
+  superClass: "DisplayScene",
+  init: function(){
     this.superInit();
     // 背景追加
-    Sprite('ed').addChildTo(this)
-                  .setPosition(this.gridX.center(),550)
+    Sprite("ed").addChildTo(this).setPosition(this.gridX.center(),500)
     
     Label({
-      text: 'TIME：' + Math.floor(timeC / 10),
+      text: "TIME：" + timeCount + "[ms]",
       fontSize: 60,
-      fill: 'white',
-    }).addChildTo(this).setPosition(320, 290);
+      fill: "white",
+    }).addChildTo(this).setPosition(320, 240);
+
+    this.restartButton = RestartButton().addChildTo(this).setPosition(320,800);
+    this.restartButton.onpointend = ()=>this.exit();
+  },
+});
+
+// RestartButtoクラスを定義
+phina.define("RestartButton", {
+  superClass: "Button",
+  init: function(){
+    this.superInit({
+      width: 300, // 横サイズ
+      height: 155, // 縦サイズ
+      text: "restart",  // 表示文字
+      fontSize: 70, // 文字サイズ
+      fontColor: "black", // 文字色
+      cornerRadius: 5,  // 角丸み
+      fill: "white", // ボタン色
+      stroke: "black",  // 枠色
+      strokeWidth: 5,   // 枠太さ
+    });
   },
 });
 
 // メイン処理
-phina.main(function() {
+phina.main(function(){
   // アプリケーション生成
-  var app = GameApp({ 
+  const app = GameApp({ 
     assets: ASSETS,
-    backgroundColor: '#3B0B17',
+    backgroundColor: "#3B0B17",
     width: SCREEN_WIDTH,
     height: SCREEN_HEIGHT,
   });
