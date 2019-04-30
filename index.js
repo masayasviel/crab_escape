@@ -1,6 +1,7 @@
 // phina.js をグローバル領域に展開
 phina.globalize();
 
+// 定数
 const ASSETS = {
   image: {
       crab:"https://4.bp.blogspot.com/-sgajyTFca4w/U820D46PUzI/AAAAAAAAjRE/Rpt5Vwp6dho/s800/takaashi_gani.png",
@@ -9,11 +10,8 @@ const ASSETS = {
       ed:"./images/finish.png"
   }
 };
-
-// 定数
 const SCREEN_WIDTH  = 640; // 画面横サイズ
 const SCREEN_HEIGHT = 960; // 画面縦サイズ
-let timeCount; // 時間
 
 // タイトルシーン
 phina.define("TitleScene", {
@@ -48,7 +46,7 @@ phina.define('MainScene', {
   superClass: 'DisplayScene',
   init: function() {
     this.superInit();
-    timeCount = 0; // 時間リセット
+    this.timeCount = 0; // 時間リセット
     // 蟹インスタンス
     this.escape = Crab().addChildTo(this);
     // 足跡インスタンス
@@ -69,11 +67,13 @@ phina.define('MainScene', {
     const escapeCircle = Circle(escape.x, escape.y, 60);
     // 円判定
     if(Collision.testCircleCircle(captureCircle, escapeCircle)){
-      self.exit();
+      self.exit({
+        timeCount: this.timeCount,
+      });
     }
   },
   update: function(app){
-    timeCount += app.deltaTime;
+    this.timeCount += app.deltaTime;
   }
 });
 
@@ -117,13 +117,13 @@ phina.define("FootPrint", {
 //resultScene クラスを定義
 phina.define("ResultScene", {
   superClass: "DisplayScene",
-  init: function(){
-    this.superInit();
+  init: function(param){
+    this.superInit(param);
     // 背景追加
-    Sprite("ed").addChildTo(this).setPosition(this.gridX.center(),500)
+    Sprite("ed").addChildTo(this).setPosition(this.gridX.center(),500);
     
     Label({
-      text: "TIME：" + timeCount + "[ms]",
+      text: "TIME：" + param.timeCount + "[ms]",
       fontSize: 60,
       fill: "white",
     }).addChildTo(this).setPosition(320, 240);
